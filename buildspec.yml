@@ -1,0 +1,40 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+        python: 3.9
+  pre_build:
+    commands:
+      - apt-get install wget apt-transport-https gnupg
+      - wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add -
+      - echo deb https://aquasecurity.github.io/trivy-repo/deb bionic main | tee -a /etc/apt/sources.list.d/trivy.list
+      - apt-get update
+      - apt-get install -y trivy
+      #- apt-get remove docker docker-engine docker.io
+      - apt-get update
+      #- apt install apt-transport-https ca-certificates curl software-properties-common -y
+      #- curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+      #- add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+      #- apt-cache policy docker-ce
+      #- apt install docker-ce -y
+      #- apt install docker.io -y
+      #- apt install docker -y
+      #- docker --version
+      #- nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2& 
+      #- timeout 15 sh -c "until docker info; do echo .; sleep 1; done" 
+      #- systemctl status docker
+      #- aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 250738637992.dkr.ecr.eu-west-1.amazonaws.com
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 436026820972.dkr.ecr.us-east-1.amazonaws.com
+      - REPOSITORY_URI=436026820972.dkr.ecr.us-east-1.amazonaws.com/research-project
+  build:
+    commands:
+      - docker build -t research-project .
+  post_build:
+    commands:
+      #- trivy --quiet image research-project:latest
+      #- trivy -f json -o results.json --exit-code 1 --severity HIGH,CRITICAL --quiet --auto-refresh image research-project/latest:latest
+      - trivy --severity CRITICAL image  research-project:latest
+      - docker tag research-project:latest 436026820972.dkr.ecr.us-east-1.amazonaws.com/research-project:testimage
+      - docker push 436026820972.dkr.ecr.us-east-1.amazonaws.com/research-project:testimage
+      
